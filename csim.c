@@ -9,11 +9,11 @@
 int main(int argc, char **argv)
 {
     int opt, flags;
-    int nsecs, tfnd;
+    int offset, block, set;
    
-    tfnd = 0;
-    flags = 0;
-    nsecs = 0;    
+    offset = 0;
+    block = 0;
+    set = 0;    
     while((opt = getopt(args, argv, "hvs:E:b:t:") != -1){
 	switch(opt){
 	case 'h':
@@ -28,12 +28,22 @@ int main(int argc, char **argv)
 		printf("Examples:\n");
 		printf("  linux>  ./csim -s 4 -E 1 -b 4 -t traces/yi.trace\n");
 		printf("  linux>  ./csim -v -s 8 -E 2 -b 4 -t traces/yi.trace\n");
+		break;
 	case 'v':
+
 	case 's':
+		set = atoi(optarg);
+		break;
 	case 'E':
+		block = atoi(optarg);
+		break;
 	case 'b':
+		offset = atoi(optarg);
+		break;
 	case 't':
+
 	default:
+		printf("./csim: Missing required command line argument\n");
 		printf("Usage: ./csim [-hv] -s <num> -E <num> -b <num> -t <file>\n");
 		printf("Options:\n");
 		printf("-h		Print this help message.\n");
@@ -44,7 +54,8 @@ int main(int argc, char **argv)
 		printf("-t <file>	Trace file.\n\n");
 		printf("Examples:\n");
 		printf("  linux>  ./csim -s 4 -E 1 -b 4 -t traces/yi.trace\n");
-		printf("  linux>  ./csim -v -s 8 -E 2 -b 4 -t traces/yi.trace\n"); 	
+		printf("  linux>  ./csim -v -s 8 -E 2 -b 4 -t traces/yi.trace\n"); 
+		exit(EXIT_FAILURE);	
 	}
     }
     printSummary(0, 0, 0);
