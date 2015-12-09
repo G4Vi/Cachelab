@@ -1,3 +1,4 @@
+CS2011 Cachelab by Gavin Hayes (gahayes) and Benjamin Sarkis (bgsarkis)
 #include "cachelab.h"
 #include <stdio.h>
 #include <string.h>
