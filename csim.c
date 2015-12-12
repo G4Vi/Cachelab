@@ -57,5 +57,6 @@ int main(int argc, char **argv)
 	}
     }
     printSummary(0, 0, 0);
+    //printSummary(hit_count, miss_count, eviction_count);
     return 0;
 }
