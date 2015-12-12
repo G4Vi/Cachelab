@@ -8,13 +8,13 @@
 
 int main(int argc, char **argv)
 {
-    int opt, flags;
+    int opt;
     int offset, block, set;
-   
+    char* file = null;
     offset = 0;
     block = 0;
     set = 0;    
-    while((opt = getopt(args, argv, "hvs:E:b:t:") != -1){
+    while((opt = getopt(args, argv, "hs:E:b:t:") != -1){
 	switch(opt){
 	case 'h':
 		printf("Usage: ./csim [-hv] -s <num> -E <num> -b <num> -t <file>\n");
@@ -29,8 +29,6 @@ int main(int argc, char **argv)
 		printf("  linux>  ./csim -s 4 -E 1 -b 4 -t traces/yi.trace\n");
 		printf("  linux>  ./csim -v -s 8 -E 2 -b 4 -t traces/yi.trace\n");
 		break;
-	case 'v':
-
 	case 's':
 		set = atoi(optarg);
 		break;
@@ -41,7 +39,7 @@ int main(int argc, char **argv)
 		offset = atoi(optarg);
 		break;
 	case 't':
-
+		file = optarg;
 	default:
 		printf("./csim: Missing required command line argument\n");
 		printf("Usage: ./csim [-hv] -s <num> -E <num> -b <num> -t <file>\n");
@@ -58,6 +56,6 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);	
 	}
     }
-    printSummary(0, 0, 0);
+    printSummary(hit_count, miss_count, eviction_count);
     return 0;
 }
