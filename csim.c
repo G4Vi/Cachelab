@@ -7,14 +7,14 @@
 #include <unistd.h>
 
 int main(int argc, char **argv)
-{
+{ 
     int opt;
     int offset, block, set;
-    char* file = null;
+    char* file = NULL;
     offset = 0;
     block = 0;
     set = 0;    
-    while((opt = getopt(args, argv, "hs:E:b:t:") != -1){
+    while((opt = getopt(argc, argv, "hs:E:b:t:") != -1)){
 	switch(opt){
 	case 'h':
 		printf("Usage: ./csim [-hv] -s <num> -E <num> -b <num> -t <file>\n");
@@ -56,6 +56,6 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);	
 	}
     }
-    printSummary(hit_count, miss_count, eviction_count);
+    printSummary(0, 0, 0);
     return 0;
 }
