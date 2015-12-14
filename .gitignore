@@ -1,7 +1,15 @@
+<<<<<<< HEAD
 #Ignore all
+=======
+# Ignore all
+>>>>>>> 52fa032bd6d7a3483eb176332770622001034d63
 *
 
 # Unignore all with extensions
 !*.*
 
+<<<<<<< HEAD
 *.csim_results
+=======
+*.csim_results
+>>>>>>> 52fa032bd6d7a3483eb176332770622001034d63
