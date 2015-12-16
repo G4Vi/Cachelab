@@ -22,6 +22,27 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
+     int mIndex, nIndex, mInner, nInner;
+     int diagonal =0;
+    //first case 32 by 32
+    if((M==N) && (M == 32)){
+            //loop in groups of 8
+	    for (nIndex = 0; nIndex < N; nIndex+=8) {
+		for (mIndex = 0; mIndex < M; mIndex+= 8) {    
+
+                        //loop through those groups of 8
+		        for(nInner = nIndex; nInner < nIndex + 8; nInner++){                   
+		            if(nIndex == mIndex)
+		            	diagonal = A[nInner][nInner];
+		            for(mInner = mIndex; mInner < mIndex + 8; mInner++){
+		                if(nInner != mInner) B[mInner][nInner] = A[nInner][mInner];
+		            }
+		            if(nIndex == mIndex)B[nInner]
+				[nInner] = diagonal;
+		        }
+		}
+	    }
+    } 
 }
 
 /* 
