@@ -23,6 +23,10 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 char transpose_submit_desc[] = "Transpose submission";
 
 /** Creates a transpose of a matrix, while being mindful of cahce memory
+    @param M represents columns of Matrix A, represents rows of Matrix B
+    @param N represents rows of Matrix B, represents columns of Matrix B
+    @param A[N][M] represents a matrix to be transposed
+    @param B[M][N] represents the transpose of matrix A
 */
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
@@ -34,11 +38,12 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 	int diagonal = 0;
 	//Variable that takes advantage of temporal locality (i.e. keeping something inside a cahce to prevent misses
 	int temporal = 0;
-	//For the 64x64 block
-	int isEven = 0;
+	//For the 64x64 matrix case
+	int k = 0;
+	int temp1, temp2, temp3, temp4;
 	//We use the same looping structure for 64x64 or 32x32 matrices, only this that changes is size of the sector (based on blocks' proximity to diagonal line) 
 	//Also, thought there seems to be duplication between the loops, it is due to the general avoidance of local variables
-	if(N == 32){
+	if(N == 32 && M == 32){
 			//We can block 8 at a time, optimal size since its a byte squared at a time
 			for(columnSector = 0; columnSector < N; columnSector += 8){
 				for(rowSector = 0; rowSector < N; rowSector += 8){
@@ -68,12 +73,30 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 				}//end rowSector for loop
 			}//end columnSector for loop
 		}//end N == 32 If statement
-        else if(N == 64){
+        else if(N == 64 && M == 64){
 			//We can block 8 at a time, optimal size since its a byte squared at a time
 			for(columnSector = 0; columnSector < M; columnSector += 8){
-				for(rowSector = 0; rowSector < N; rowSector += 4){
-					if(isEven % 2 == 1){
-						//Cycle through 4x8 buffer
+				for(rowSector = 0; rowSector < N; rowSector += 8){
+					//Now we iterate through four sections of an 8x8 block for better caching
+					for(k = 0; k < 8; k++){
+						//For box a (upper left section), do a normal transpose
+						for(colCount = columnSector; colCount < columnSector + 8; colCount++){
+							if((colCount - columnSector) < 4){
+								B[colCount][k] = A[k][colCount];
+							}
+							else{
+								tmp = A[k + rowSector][colCount];
+								B[colCount - 4][k + rowSector + 4] = tmp;
+							}
+						}
+					//The 'a' section has been fully dealt with, onto the b and c sections.
+					for(k = 4; k < 8; k++){
+						//For boxes b and c, scan a row of b to local vars, find values in A to fill the row in b, and use local vars to fill a row of c
+						//Repeat 4 times
+						for(colCount = columnSector + 4; colCount < columnSector + 8; colCount++){
+							tmp = A[k + rowSector][colCount];
+							
+								
 						//Now we cycle within one block, so we loop sector at a time
 						for(rowCount = rowSector; rowCount < rowSector + 4 ; rowCount++){
 							for(colCount = columnSector; colCount < columnSector + 8 ; colCount++){
@@ -99,7 +122,6 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 						}
 					}//end rowCount for loop
 				}//end rowSector for loop
-				isEven++;//<--Keep track of which half of an 8x8 block you are in
 			}//end columnSector for loop
 		}//end N == 64 If statement
 	//For the prime numbered unevern matrices, we use 16 to find a medium between larger
@@ -148,6 +170,10 @@ void registerFunctions()
  * is_transpose - This helper function checks if B is the transpose of
  *     A. You can check the correctness of your transpose by calling
  *     it before returning from the transpose function.
+ *  @param M represents columns of Matrix A, represents rows of Matrix B
+ *  @param N represents rows of Matrix B, represents columns of Matrix B
+ *  @param A[N][M] represents original matrix
+ *  @param B[M][N] represents transposed matrix to be checked
  */
 int is_transpose(int M, int N, int A[N][M], int B[M][N])
 {
