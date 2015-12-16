@@ -21,33 +21,6 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  *     be graded. 
  */
 char transpose_submit_desc[] = "Transpose submission";
-//<<<<<<< HEAD
-//=======
-//void transpose_submit(int M, int N, int A[N][M], int B[M][N])
-//{
- //    int mIndex, nIndex, mInner, nInner;
- //    int diagonal =0;
-    //first case 32 by 32
-  //  if((M==N) && (M == 32)){
-            //loop in groups of 8
-//	    for (nIndex = 0; nIndex < N; nIndex+=8) {
-//		for (mIndex = 0; mIndex < M; mIndex+= 8) {    
-
-                        //loop through those groups of 8
-//		        for(nInner = nIndex; nInner < nIndex + 8; nInner++){                   
-//		            if(nIndex == mIndex)
-//		            	diagonal = A[nInner][nInner];
-//		            for(mInner = mIndex; mInner < mIndex + 8; mInner++){
-//		                if(nInner != mInner) B[mInner][nInner] = A[nInner][mInner];
-//		            }
-//		            if(nIndex == mIndex)B[nInner]
-//				[nInner] = diagonal;
-//		        }
-//		}
-//	    }
- //   } 
-//}
-//>>>>>>> 1d8348aadd1197bb88ebb1a6e140f06712a7ce20
 
 /** Creates a transpose of a matrix, while being mindful of cahce memory
     @param M represents columns of Matrix A, represents rows of Matrix B
@@ -99,7 +72,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 			}//end columnSector for loop
 		}//end N == 32 If statement
         else if(N == 64){
-			//We can block 8 at a time, optimal size since its a byte squared at a time
+		//We can block 8 at a time, optimal size since its a byte squared at a time
 			for(columnSector = 0; columnSector < M; columnSector += 4){
 				for(rowSector = 0; rowSector < N; rowSector += 4){
 					for(rowCount = rowSector; rowCount < rowSector + 4 ; rowCount++){
@@ -107,8 +80,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 							//As long as we are not on the diagonal, we put the value
 							//from A[row][column] into B[column][row], the heart of transposing
 							if(rowCount != colCount){
-								B[colCount][rowCount] = A[rowCount][colCount];
-								
+								B[colCount][rowCount] = A[rowCount][colCount];	
 							}
 							else{
 								//The digonal variable keeps to data in a cache utilizing spatial locality
