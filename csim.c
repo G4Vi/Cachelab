@@ -42,6 +42,7 @@ void makeCache(struct cache *aCache, int set, int lines);
 int mostRecent(struct cache *aCache, int whichSet, int); 
 void use();
 int lookAtTraces(struct cache *aCache, char *aBuf, int set, int line, int bloc);
+void freeAll(struct cache *aCache);
 
 int main(int argc, char **argv)
 { 
@@ -161,6 +162,7 @@ int main(int argc, char **argv)
     }//end of while loop
     fclose(someFile);
     printSummary(hits, misses, evictions);
+    freeAll(&aCache);
     return 0;
 }
 
@@ -322,7 +324,14 @@ int lookAtTraces(struct cache *aCache, char *aBuf, int set, int line, int bloc){
 	return 0;  //<-- Just in case, return no state
 }
 	
-	
-
+/**frees all memory
+*/
+void freeAll(struct cache *aCache){
+	int f;
+	for(f = 0; f < aCache -> sets; f++){
+		free(aCache -> listSet[f].listLines);
+	}
+	free(aCache -> listSet);
+}
 
 

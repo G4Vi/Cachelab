@@ -21,6 +21,33 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  *     be graded. 
  */
 char transpose_submit_desc[] = "Transpose submission";
+//<<<<<<< HEAD
+//=======
+//void transpose_submit(int M, int N, int A[N][M], int B[M][N])
+//{
+ //    int mIndex, nIndex, mInner, nInner;
+ //    int diagonal =0;
+    //first case 32 by 32
+  //  if((M==N) && (M == 32)){
+            //loop in groups of 8
+//	    for (nIndex = 0; nIndex < N; nIndex+=8) {
+//		for (mIndex = 0; mIndex < M; mIndex+= 8) {    
+
+                        //loop through those groups of 8
+//		        for(nInner = nIndex; nInner < nIndex + 8; nInner++){                   
+//		            if(nIndex == mIndex)
+//		            	diagonal = A[nInner][nInner];
+//		            for(mInner = mIndex; mInner < mIndex + 8; mInner++){
+//		                if(nInner != mInner) B[mInner][nInner] = A[nInner][mInner];
+//		            }
+//		            if(nIndex == mIndex)B[nInner]
+//				[nInner] = diagonal;
+//		        }
+//		}
+//	    }
+ //   } 
+//}
+//>>>>>>> 1d8348aadd1197bb88ebb1a6e140f06712a7ce20
 
 /** Creates a transpose of a matrix, while being mindful of cahce memory
     @param M represents columns of Matrix A, represents rows of Matrix B
@@ -39,12 +66,10 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 	//Variable that takes advantage of temporal locality (i.e. keeping something inside a cahce to prevent misses
 	int temporal = 0;
 	//For the 64x64 matrix case
-	int k = 0;
-	int temp1, temp2, temp3, temp4;
 	//We use the same looping structure for 64x64 or 32x32 matrices, only this that changes is size of the sector (based on blocks' proximity to diagonal line) 
 	//Also, thought there seems to be duplication between the loops, it is due to the general avoidance of local variables
 	if(N == 32 && M == 32){
-			//We can block 8 at a time, optimal size since its a byte squared at a time
+			//We can block 8 at a time, optimal size since its a cache at a time
 			for(columnSector = 0; columnSector < N; columnSector += 8){
 				for(rowSector = 0; rowSector < N; rowSector += 8){
 					//Now we cycle within one block, so we loop sector at a time
@@ -73,57 +98,35 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 				}//end rowSector for loop
 			}//end columnSector for loop
 		}//end N == 32 If statement
-        else if(N == 64 && M == 64){
+        else if(N == 64){
 			//We can block 8 at a time, optimal size since its a byte squared at a time
-			for(columnSector = 0; columnSector < M; columnSector += 8){
-				for(rowSector = 0; rowSector < N; rowSector += 8){
-					//Now we iterate through four sections of an 8x8 block for better caching
-					for(k = 0; k < 8; k++){
-						//For box a (upper left section), do a normal transpose
-						for(colCount = columnSector; colCount < columnSector + 8; colCount++){
-							if((colCount - columnSector) < 4){
-								B[colCount][k] = A[k][colCount];
+			for(columnSector = 0; columnSector < M; columnSector += 4){
+				for(rowSector = 0; rowSector < N; rowSector += 4){
+					for(rowCount = rowSector; rowCount < rowSector + 4 ; rowCount++){
+						for(colCount = columnSector; colCount < columnSector + 4 ; colCount++){
+							//As long as we are not on the diagonal, we put the value
+							//from A[row][column] into B[column][row], the heart of transposing
+							if(rowCount != colCount){
+								B[colCount][rowCount] = A[rowCount][colCount];
+								
 							}
 							else{
-								tmp = A[k + rowSector][colCount];
-								B[colCount - 4][k + rowSector + 4] = tmp;
+								//The digonal variable keeps to data in a cache utilizing spatial locality
+								diagonal = rowCount;
+								//Temporal uses...temporal locality
+								temporal = A[rowCount][colCount];
 							}
 						}
-					//The 'a' section has been fully dealt with, onto the b and c sections.
-					for(k = 4; k < 8; k++){
-						//For boxes b and c, scan a row of b to local vars, find values in A to fill the row in b, and use local vars to fill a row of c
-						//Repeat 4 times
-						for(colCount = columnSector + 4; colCount < columnSector + 8; colCount++){
-							tmp = A[k + rowSector][colCount];
-							
-								
-						//Now we cycle within one block, so we loop sector at a time
-						for(rowCount = rowSector; rowCount < rowSector + 4 ; rowCount++){
-							for(colCount = columnSector; colCount < columnSector + 8 ; colCount++){
-								//As long as we are not on the diagonal, we put the value
-								//from A[row][column] into B[column][row], the heart of transposing
-								if(rowCount != colCount){
-									B[colCount][rowCount] = A[rowCount][colCount];
-								
-								}
-								else{
-									//The digonal variable keeps to data in a cache utilizing spatial locality
-									diagonal = rowCount;
-									//Temporal uses...temporal locality
-									temporal = A[rowCount][colCount];
-								}
-							}
-							//In a square matrix, if the sector we are blocking off contains 
-							//the diagonal, then we keep those elements the same.
-							//Doint it this way reduces the amount of misses
-							if(columnSector == rowSector){
-								B[diagonal][diagonal] = temporal;
-							}//end if statement
-						}
+						//In a square matrix, if the sector we are blocking off contains 
+						//the diagonal, then we keep those elements the same.
+						//Doint it this way reduces the amount of misses
+						if(columnSector == rowSector){
+							B[diagonal][diagonal] = temporal;
+						}//end if statement
 					}//end rowCount for loop
-				}//end rowSector for loop
-			}//end columnSector for loop
-		}//end N == 64 If statement
+			}//end rowSector for loop
+		}//end columnSector for loop
+	}//end N == 64 If statement
 	//For the prime numbered unevern matrices, we use 16 to find a medium between larger
 	//matrices and smaller ones.
 	else{
@@ -145,12 +148,12 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 
 					if(columnSector == rowSector){
 						B[diagonal][diagonal] = temporal;
-					}
-				}
-			}
-		}
-	}				
-} 
+					}//end if statement
+				}//end rowCount for loop
+			}//end rowSector for loop
+		}//end colSector for loop
+	}//end else statement				
+} //end func
 
 /*
  * registerFunctions - This function registers your transpose
