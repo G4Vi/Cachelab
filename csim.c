@@ -7,11 +7,11 @@
 #include <unistd.h>
 
 //Symbolic constants for Misses, hits, and evictions
-#define HIT 1
-#define MISS 2
-#define MISS_HIT 4
-#define MISS_EVICTION 8
-#define MISS_EVICTION_HIT 16
+#define HIT 40
+#define MISS 20
+#define MISS_HIT 160
+#define MISS_EVICTION 80
+#define MISS_EVICTION_HIT 200
 
 //Struct for line of a cache
 struct line{
@@ -31,7 +31,6 @@ struct cache{
         int linesSet;         
         struct actualSet *listSet;
 };
-
 
 //Relevant Data
 int hits = 0;
@@ -152,7 +151,7 @@ int main(int argc, char **argv)
 				printf("%s miss\n", outBuf+1);
 				break;
 			case HIT:
-				printf("%s miss eviction hit\n", outBuf+1);
+				printf("%s hit\n", outBuf+1);
 				break;
 			default:
 				break;
@@ -220,19 +219,21 @@ void makeCache(struct cache *aCache, int set, int lines){
     int i, j;
 	aCache->sets = (2 << set); //number of sets = 2^s
 	aCache->linesSet = lines;
-
-        aCache->listSet = calloc(aCache->sets, sizeof(struct actualSet));
+	//calloc is good becasue we allocate memory the size of an actuaSet for each set
+        aCache->listSet = (struct actualSet *)calloc(aCache->sets, sizeof(struct actualSet));
        
+	//obligatory error checking
         if(!aCache->listSet)
 	    exit(-1);        
 
+	//Now we allocate memory within each line using calloc
 	for(i = 0; i < aCache->sets; i++)
         {
-            aCache->listSet[i].listLines = calloc(aCache->linesSet, sizeof(struct line));
+            aCache->listSet[i].listLines = (struct line *)calloc(aCache->linesSet, sizeof(struct line));
 
             if(!aCache->listSet[i].listLines)
 	        exit(-1);
-
+	    //Set all the valid bits to zero
             for(j = 0; j < aCache->linesSet; j++)
             {
                 aCache->listSet[i].listLines[j].validBit = 0;
@@ -248,7 +249,7 @@ void makeCache(struct cache *aCache, int set, int lines){
     @return the result of an operation (hit, miss, eviction, or any relevant combination) 
 */
 int lookAtTraces(struct cache *aCache, char *aBuf, int set, int line, int bloc){
-	int address;
+	int address; 
 	int mask = 0x7fffffff;  //Used for set and tag bits
 	int num; //loop counter
 	char optField; //M, I, L, or S
@@ -266,7 +267,8 @@ int lookAtTraces(struct cache *aCache, char *aBuf, int set, int line, int bloc){
 		if(1 == aCache->  listSet[whichSet].listLines[num].validBit && whichTag == aCache -> listSet[whichSet].listLines[num].tagBits){
 			if(optField == 'M'){
 				//Because M is a data load and a data store, this is a double hit
-				hits += 2;
+				++hits;
+				++hits;
 			}
 			else{
 				//Just hit once otherwise
@@ -276,17 +278,18 @@ int lookAtTraces(struct cache *aCache, char *aBuf, int set, int line, int bloc){
 			//It either hit once or twice but either way it did hit, so return hit.
 			return HIT;
 		}
-			
-		misses++; //<--If it skipped over the hit statement, we can assume it misses
+	}
+	++misses; //<--If it skipped over the hit statement/loop , we can assume it misses
+	for(num = 0; num < aCache -> linesSet; num++){
 		//if the valid bit is zero, we miss
 		if(0 == aCache -> listSet[whichSet].listLines[num].validBit){
 			//If we miss, we then set the whole line to one and set the tag to the tag 				//of the address of interest
 			aCache-> listSet[whichSet].listLines[num].validBit = 1;
 			aCache-> listSet[whichSet].listLines[num].tagBits = whichTag;
-			//			
+			mostRecent(aCache, whichSet, num);
 			//if we have the data load and store, it is both a miss and a hit
 			if(optField == 'M'){
-				hits++;
+				++hits;
 				return MISS_HIT;
 			}
 			//Otherwise it is just a plain miss
@@ -294,11 +297,13 @@ int lookAtTraces(struct cache *aCache, char *aBuf, int set, int line, int bloc){
 				return MISS;
 			}
 		}
-
+        }
+	++evictions;  //<-- If it didn't immediately miss or hit, then we have to evict a 
+	//portion of a cache
+	for(num = 0; num < aCache -> linesSet; num++){
 		//Since we have been keeping track of when things were accessed, if it matches
 		//a time of a place previously accessed, then we evict
-		evictions++;  //<-- If it didn't immediately miss or hit, then we have to evict a 
-		//portion of a cache
+		
 		if(1 == aCache -> listSet[whichSet].listLines[num].access_time){
 			aCache -> listSet[whichSet].listLines[num].tagBits = whichTag;
 			aCache -> listSet[whichSet].listLines[num].validBit = 1;
@@ -306,7 +311,7 @@ int lookAtTraces(struct cache *aCache, char *aBuf, int set, int line, int bloc){
 			//Normally we evict then miss.  But since this is a data load AND a data 
 			//store, we hit as well
 			if('M' == optField){
-				hits++;
+				++hits;
 				return MISS_EVICTION_HIT;
 			}
 			else{
@@ -314,7 +319,7 @@ int lookAtTraces(struct cache *aCache, char *aBuf, int set, int line, int bloc){
 			}
 		}//end if statement	
 	}//end loop
-	return 0;  //<-- Just in case
+	return 0;  //<-- Just in case, return no state
 }
 	
 	
